@@ -76,7 +76,7 @@ def silver_from(spark, events):
 def test_minute_metrics_aggregate_per_vehicle_per_minute(spark):
     from telemetry.transforms import minute_metrics
 
-    start = datetime(2026, 11, 20, 12, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 1, 15, 12, 0, tzinfo=timezone.utc)
     fleet = Fleet(4, seed=14, rates=InjectionRates(0, 0, 0))
     events = [e for s in range(120) for e in fleet.tick(start + timedelta(seconds=s))]
     metrics = minute_metrics(silver_from(spark, events)).collect()
@@ -101,7 +101,7 @@ def test_daily_summary_merge_is_idempotent(spark, tmp_path):
     from _common import merge_into
     from telemetry.transforms import daily_fleet_summary
 
-    now = datetime(2026, 11, 20, 12, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 15, 12, 0, tzinfo=timezone.utc)
     fleet = Fleet(20, seed=16, rates=InjectionRates(0, 0, 0))
     events = [e for s in range(30) for e in fleet.tick(now - timedelta(seconds=30 - s))]
     summary = daily_fleet_summary(silver_from(spark, events))
