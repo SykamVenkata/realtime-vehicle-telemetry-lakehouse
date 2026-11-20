@@ -1,0 +1,4 @@
+# Runtime for the local pipeline (Docker image and CI)
+pyspark==3.5.3
+delta-spark==3.2.1
+confluent-kafka>=2.5

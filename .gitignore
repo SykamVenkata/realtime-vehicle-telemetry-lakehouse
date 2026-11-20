@@ -1,0 +1,28 @@
+# Local Lakehouse data and Spark artifacts
+data/
+spark-warehouse/
+metastore_db/
+derby.log
+*.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/*.tfvars
+!infra/terraform/example.tfvars
+infra/terraform/.terraform.lock.hcl
+
+# Databricks bundles
+.databricks/
+
+# Secrets
+.env

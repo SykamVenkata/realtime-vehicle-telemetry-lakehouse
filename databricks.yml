@@ -1,0 +1,84 @@
+# Databricks Asset Bundle: deploys the streaming and daily jobs.
+#   databricks bundle validate
+#   databricks bundle deploy -t dev --var lakehouse_root=abfss://lakehouse@<account>.dfs.core.windows.net
+#   databricks bundle run telemetry_streaming -t dev
+bundle:
+  name: vehicle-telemetry-lakehouse
+
+variables:
+  lakehouse_root:
+    description: Root of the Lakehouse (abfss:// URI or /Volumes/... path)
+  secret_scope:
+    description: Databricks secret scope holding the Event Hubs connection string
+    default: telemetry
+  node_type:
+    description: VM size for job clusters
+    default: Standard_D4ds_v5
+  spark_version:
+    default: 15.4.x-scala2.12
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+resources:
+  jobs:
+    telemetry_streaming:
+      name: telemetry-streaming
+      max_concurrent_runs: 1
+      job_clusters:
+        - job_cluster_key: streaming
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type}
+            num_workers: 2
+            data_security_mode: SINGLE_USER
+            spark_conf:
+              spark.sql.shuffle.partitions: "8"
+            spark_env_vars:
+              LAKEHOUSE_ROOT: ${var.lakehouse_root}
+              EVENTHUBS_SECRET_SCOPE: ${var.secret_scope}
+              EVENTHUBS_SECRET_KEY: eventhubs-connection-string
+              STREAM_TRIGGER: 30 seconds
+      # The three layers run side by side on one cluster; downstream tasks
+      # wait for their source table, so start order doesn't matter.
+      tasks:
+        - task_key: bronze_ingest
+          job_cluster_key: streaming
+          spark_python_task:
+            python_file: ./pipelines/bronze_ingest.py
+        - task_key: silver_cleanse
+          job_cluster_key: streaming
+          spark_python_task:
+            python_file: ./pipelines/silver_cleanse.py
+        - task_key: gold_stream
+          job_cluster_key: streaming
+          spark_python_task:
+            python_file: ./pipelines/gold_stream.py
+
+    telemetry_daily:
+      name: telemetry-daily
+      schedule:
+        quartz_cron_expression: "0 30 1 * * ?"
+        timezone_id: UTC
+      job_clusters:
+        - job_cluster_key: batch
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type}
+            num_workers: 1
+            data_security_mode: SINGLE_USER
+            spark_env_vars:
+              LAKEHOUSE_ROOT: ${var.lakehouse_root}
+      tasks:
+        - task_key: daily_summary
+          job_cluster_key: batch
+          spark_python_task:
+            python_file: ./pipelines/gold_daily_summary.py
+        - task_key: maintenance
+          job_cluster_key: batch
+          depends_on:
+            - task_key: daily_summary
+          spark_python_task:
+            python_file: ./pipelines/maintenance.py

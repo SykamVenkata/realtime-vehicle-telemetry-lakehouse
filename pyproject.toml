@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vehicle-telemetry-lakehouse"
+version = "0.1.0"
+description = "Real-time connected-vehicle telemetry Lakehouse on Azure: Event Hubs, Databricks Structured Streaming and Delta Lake."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Narendra Sykam" }]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+spark = ["pyspark==3.5.3", "delta-spark==3.2.1"]
+producer = ["confluent-kafka>=2.5"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["spark: needs a local Spark session (PySpark + delta-spark)"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["telemetry", "_common"]
