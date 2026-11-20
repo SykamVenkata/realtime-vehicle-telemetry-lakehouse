@@ -30,6 +30,10 @@ def get_spark(app_name: str, with_kafka: bool = False):
         .config("spark.sql.session.timeZone", "UTC")
         .config("spark.ui.showConsoleProgress", "false")
     )
+    # Optional extra Maven mirrors (comma-separated), for networks where
+    # Maven Central is slow or blocked.
+    if os.getenv("SPARK_JARS_REPOSITORIES"):
+        builder = builder.config("spark.jars.repositories", os.environ["SPARK_JARS_REPOSITORIES"])
     packages = [f"org.apache.spark:spark-sql-kafka-0-10_2.12:{pyspark.__version__}"] if with_kafka else []
     spark = configure_spark_with_delta_pip(builder, extra_packages=packages).getOrCreate()
     spark.sparkContext.setLogLevel(os.getenv("SPARK_LOG_LEVEL", "WARN"))
